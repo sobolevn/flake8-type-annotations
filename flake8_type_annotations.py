@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import tokenize
-from typing import Generator, Tuple, Sequence
+from typing import Generator, Sequence, Tuple
 
 import pkg_resources
 from pycodestyle import STARTSWITH_DEF_REGEX
@@ -11,29 +11,61 @@ pkg_name = 'flake8-type-annotations'
 #: We store the version number inside the `pyproject.toml`:
 pkg_version: str = pkg_resources.get_distribution(pkg_name).version
 
-STDIN = 'stdin'
+
+CORRECT_PATTERN = ' {0} '
+EQUAL = '='
+ARROW = '->'
+
+
+def _get_boundaries(
+    tokens: Sequence[tokenize.TokenInfo],
+    index: int,
+) -> Tuple[int, int]:
+    _, previous_end = tokens[index - 1].end
+    _, next_start = tokens[index + 1].start
+    return previous_end, next_start
+
+
+def _count_parens(token: tokenize.TokenInfo) -> int:
+    if token.exact_type in (tokenize.LPAR, tokenize.LSQB):
+        return 1
+    if token.exact_type in (tokenize.RPAR, tokenize.RSQB):
+        return -1
+    return 0
 
 
 def _validate_parameters(
     tokens: Sequence[tokenize.TokenInfo],
-) -> Generator[int, None, None]:
+) -> Sequence[int]:
+    parens = 0
+    annotated_func_arg = False
+    errors = []
+
     for index, token in enumerate(tokens):
-        if token.exact_type == tokenize.EQUAL:
-            _, previous_end = tokens[index - 1].end
-            _, next_start = tokens[index + 1].start
-            if next_start - previous_end < len(' = '):
-               yield token.start
+        parens += _count_parens(token)
+
+        if token.exact_type == tokenize.COLON and parens == 1:
+            annotated_func_arg = True
+        elif token.exact_type == tokenize.COMMA and parens == 1:
+            annotated_func_arg = False
+
+        if annotated_func_arg and token.exact_type == tokenize.EQUAL:
+            previous_end, next_start = _get_boundaries(tokens, index)
+            if next_start - previous_end < len(CORRECT_PATTERN.format(EQUAL)):
+                errors.append(token.start)
+    return errors
 
 
 def _validate_return_type(
     tokens: Sequence[tokenize.TokenInfo],
-) -> Generator[int, None, None]:
+) -> Sequence[int]:
+    errors = []
     for index, token in enumerate(tokens):
-        if token.string == '->':
-            _, previous_end = tokens[index - 1].end
-            _, next_start = tokens[index + 1].start
-            if next_start - previous_end < len(' -> '):
-               yield token.start
+        if token.string == ARROW:  # there's no operator for `->` in tokenize
+            previous_end, next_start = _get_boundaries(tokens, index)
+            if next_start - previous_end < len(CORRECT_PATTERN.format(ARROW)):
+                errors.append(token.start)
+    return errors
 
 
 class Checker(object):
@@ -52,8 +84,6 @@ class Checker(object):
         self,
         logical_line: str,
         tokens: Sequence[tokenize.TokenInfo],
-        filename: str = STDIN,
-        simple: int = 12,
     ) -> None:
         """
         Creates new checker instance.
@@ -64,9 +94,9 @@ class Checker(object):
         """
         self.logical_line = logical_line
         self.tokens = tokens
-        self.filename = filename
 
     def __iter__(self) -> Generator[Tuple[int, str], None, None]:
+        """Called by ``flake8`` on each logical line in a file."""
         if STARTSWITH_DEF_REGEX.match(self.logical_line):
             for offset in _validate_parameters(self.tokens):
                 yield offset, self.T800

@@ -2,7 +2,7 @@
 
 import subprocess
 
-from flake8_eradicate import pkg_name, pkg_version
+from flake8_type_annotations import pkg_name, pkg_version
 
 
 def test_call_flake8_version():
