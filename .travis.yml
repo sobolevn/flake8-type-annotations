@@ -15,7 +15,7 @@ install:
 
 script:
   - poetry run pytest
-  - poetry run mypy flake8_eradicate.py
+  - poetry run mypy flake8_type_annotations.py
 
 after_success:
   - pip install coveralls

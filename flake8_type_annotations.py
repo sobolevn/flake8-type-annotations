@@ -36,10 +36,9 @@ def _count_parens(token: tokenize.TokenInfo) -> int:
 
 def _validate_parameters(
     tokens: Sequence[tokenize.TokenInfo],
-) -> Sequence[int]:
+) -> Generator[Tuple[int, int], None, None]:
     parens = 0
     annotated_func_arg = False
-    errors = []
 
     for index, token in enumerate(tokens):
         parens += _count_parens(token)
@@ -52,20 +51,17 @@ def _validate_parameters(
         if annotated_func_arg and token.exact_type == tokenize.EQUAL:
             previous_end, next_start = _get_boundaries(tokens, index)
             if next_start - previous_end < len(CORRECT_PATTERN.format(EQUAL)):
-                errors.append(token.start)
-    return errors
+                yield token.start
 
 
 def _validate_return_type(
     tokens: Sequence[tokenize.TokenInfo],
-) -> Sequence[int]:
-    errors = []
+) -> Generator[Tuple[int, int], None, None]:
     for index, token in enumerate(tokens):
         if token.string == ARROW:  # there's no operator for `->` in tokenize
             previous_end, next_start = _get_boundaries(tokens, index)
             if next_start - previous_end < len(CORRECT_PATTERN.format(ARROW)):
-                errors.append(token.start)
-    return errors
+                yield token.start
 
 
 class Checker(object):
@@ -95,7 +91,7 @@ class Checker(object):
         self.logical_line = logical_line
         self.tokens = tokens
 
-    def __iter__(self) -> Generator[Tuple[int, str], None, None]:
+    def __iter__(self) -> Generator[Tuple[Tuple[int, int], str], None, None]:
         """Called by ``flake8`` on each logical line in a file."""
         if STARTSWITH_DEF_REGEX.match(self.logical_line):
             for offset in _validate_parameters(self.tokens):

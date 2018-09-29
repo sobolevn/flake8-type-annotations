@@ -12,6 +12,19 @@ by [Guido van Rossum](https://github.com/gvanrossum).
 pip install flake8-type-annotations
 ```
 
+## Code example
+
+```python
+# Consistency with this plugin:
+def function(param=0, other: int = 0) -> int:
+    return param + other
+
+
+# Possible errors without this plugin:
+def function(param=0, other: int=0)->int:
+    return param + other
+```
+
 ## Error codes
 
 | Error code |                          Description                          |

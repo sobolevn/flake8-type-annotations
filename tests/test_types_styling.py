@@ -13,7 +13,7 @@ def test_correct_fixture(absolute_path):
     )
     stdout, _ = process.communicate()
 
-    assert len(stdout) == 0
+    assert len(stdout) == 0, stdout
 
 
 def test_incorrect_fixture(absolute_path):
@@ -42,4 +42,4 @@ def test_incorrect_fixture_noqa(absolute_path):
     )
     stdout, _ = process.communicate()
 
-    assert len(stdout) == 0
+    assert len(stdout) == 0, stdout
