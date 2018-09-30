@@ -84,9 +84,11 @@ class Checker(object):
         """
         Creates new checker instance.
 
-        We need both tree and tokenize sequence, since it is sometimes
-        easier to get the information from ``ast`` and sometimes it is easier
-        to get the information from ``tokenize`` sources.
+        We need both ``logical_line`` and ``tokens``.
+        Since it is easier to get some information from lines
+        and some information from tokens.
+
+        See: http://flake8.pycqa.org/en/latest/plugin-development
         """
         self.logical_line = logical_line
         self.tokens = tokens
