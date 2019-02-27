@@ -6,6 +6,9 @@ Validates type annotations syntax
 as it was [originally proposed](https://github.com/PyCQA/pycodestyle/issues/357)
 by [Guido van Rossum](https://github.com/gvanrossum).
 
+**Deprecated** and is no longer required after `flake8 >=3.7`.
+Not it is handled via `E225` and `E252` violation checks.
+
 ## Installation
 
 ```bash
